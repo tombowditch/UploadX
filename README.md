@@ -1,7 +1,7 @@
 UploadX
 ======
 
-A simple screenshot upload **server** written in Go for screenshot uploading (originally written for ShareX, works with alot of screenshot programs). Utilises the POST functionality for very speedy uploading.
+A simple **server** written in Go for screenshot uploading (originally written for ShareX, works with alot of screenshot programs). Utilises the POST functionality for very speedy uploading.
 
 Building
 ========
