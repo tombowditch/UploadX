@@ -73,7 +73,8 @@ func main() {
 			logrus.Error("Uploaded file was not an image")
 			ctx.StatusCode(iris.StatusInternalServerError)
 			ctx.JSON(SimpleResponse{Success: false, Message: "Uploaded file is not an image"})
-			os.Remove("./files/" + randName) // lol doesnt work "HaHa The process cannot access the file because it is being used by another process. :angry:
+			// Need a workaround, os.Remove reports process is already using the file.
+			os.Remove("./files/" + randName)
 		}
 	})
 
