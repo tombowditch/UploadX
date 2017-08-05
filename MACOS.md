@@ -39,4 +39,12 @@ I then have a script which I run in the background on boot which just contains t
 fswatch -0 ~/Pictures/Greenshot | while read -d "" event; do bash ~/auto-screenshot-uploader.sh "$event"; done
 ```
 
+(I actually just use crontab, see below)
+
+```bash
+@reboot screen -dmS uploadx-listener bash ~/scripts/screenshot-fswatch.sh
+```
+
+
+
 These scripts are pretty expandable, providing $YourScreenshotProgram can save to a directory you can switch directories around in the script and enjoy auto-uploading to your UploadX instance.
