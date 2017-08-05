@@ -9,4 +9,9 @@ Building
 * Clone to your gopath
 * Run `go build`
 
-Prebuilt binaries available in releases section..
+Prebuilt binaries available in releases section.
+
+macOS
+=====
+
+I manage to utilize UploadX on macOS through a number of scripts. More information available in MACOS.md
