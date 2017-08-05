@@ -1,16 +1,16 @@
 package main
 
 import (
-	"github.com/kataras/iris"
-	"github.com/kataras/iris/context"
 	"fmt"
-	"os"
-	"io"
-	"gopkg.in/h2non/filetype.v1"
-	"io/ioutil"
+	"github.com/elgs/gostrgen"
+	"github.com/go-siris/siris"
+	"github.com/go-siris/siris/context"
 	"github.com/joho/godotenv"
 	"github.com/sirupsen/logrus"
-	"github.com/elgs/gostrgen"
+	"gopkg.in/h2non/filetype.v1"
+	"io"
+	"io/ioutil"
+	"os"
 )
 
 type Response struct {
@@ -25,7 +25,7 @@ type SimpleResponse struct {
 }
 
 func main() {
-	app := iris.New()
+	app := siris.New()
 
 	err := godotenv.Load()
 	if err != nil {
@@ -37,7 +37,7 @@ func main() {
 		key := ctx.PostValue("key")
 		if key != os.Getenv("UPLOAD_KEY") {
 			logrus.Error("Invalid application key provided")
-			ctx.StatusCode(iris.StatusInternalServerError)
+			ctx.StatusCode(siris.StatusInternalServerError)
 			ctx.JSON(SimpleResponse{Success: false, Message: "Invalid application key"})
 			return
 		}
@@ -45,7 +45,7 @@ func main() {
 		file, _, err := ctx.FormFile("img")
 		if err != nil {
 			logrus.Error("No file was given")
-			ctx.StatusCode(iris.StatusInternalServerError)
+			ctx.StatusCode(siris.StatusInternalServerError)
 			ctx.JSON(SimpleResponse{Success: false, Message: "Could not upload [no file]"})
 			return
 		}
@@ -57,21 +57,21 @@ func main() {
 		if err != nil {
 			logrus.Error("Could not write the file")
 			fmt.Println("Could't write the file, please make sure the 'files' directory is created.")
-			ctx.StatusCode(iris.StatusInternalServerError)
+			ctx.StatusCode(siris.StatusInternalServerError)
 			ctx.JSON(SimpleResponse{Success: false, Message: "Could not upload [cf]"})
 			return
 		}
 		defer out.Close()
 		io.Copy(out, file)
-		buf, _ := ioutil.ReadFile("./files/" + randName+".png")
+		buf, _ := ioutil.ReadFile("./files/" + randName + ".png")
 
 		if filetype.IsImage(buf) {
 			logrus.Info("Uploaded file and served response: " + randName)
-			ctx.StatusCode(iris.StatusOK)
+			ctx.StatusCode(siris.StatusOK)
 			ctx.JSON(Response{Success: true, Message: "Uploaded", Name: randName})
 		} else {
 			logrus.Error("Uploaded file was not an image")
-			ctx.StatusCode(iris.StatusInternalServerError)
+			ctx.StatusCode(siris.StatusInternalServerError)
 			ctx.JSON(SimpleResponse{Success: false, Message: "Uploaded file is not an image"})
 			// Need a workaround, os.Remove reports process is already using the file.
 			os.Remove("./files/" + randName)
@@ -84,24 +84,24 @@ func main() {
 		_, err := ioutil.ReadFile(filePath)
 		if err != nil {
 			logrus.Error("Serving file '" + imgName + "' - unknown file")
-			ctx.StatusCode(iris.StatusInternalServerError)
+			ctx.StatusCode(siris.StatusInternalServerError)
 			ctx.JSON(SimpleResponse{Success: false, Message: " Unknown file"})
 			return
 		}
 
 		logrus.Info("Serving file '" + imgName + "' - success")
-		ctx.StatusCode(iris.StatusOK)
+		ctx.StatusCode(siris.StatusOK)
 		ctx.ServeFile(filePath, true)
 
 	})
 
 	app.Get("/", func(ctx context.Context) {
 		logrus.Info("Serving index page")
-		ctx.StatusCode(iris.StatusOK)
+		ctx.StatusCode(siris.StatusOK)
 		ctx.JSON(SimpleResponse{Success: true, Message: os.Getenv("INDEX_PAGE_TEXT")})
 	})
 
-	app.Run(iris.Addr(os.Getenv("BIND_HOST") + ":" + os.Getenv("BIND_PORT")))
+	app.Run(siris.Addr(os.Getenv("BIND_HOST") + ":" + os.Getenv("BIND_PORT")))
 }
 
 func randString(n int) string {
@@ -111,4 +111,3 @@ func randString(n int) string {
 	}
 	return r
 }
-
