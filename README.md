@@ -14,10 +14,10 @@ Prebuilt binaries available in releases section.
 Tutorials
 =========
 
-# Windows
+## Windows
 
 _Coming shortly_
 
-# macOS
+## macOS
 
 I manage to utilize UploadX on macOS through a number of scripts. More information available in MACOS.md
