@@ -1,15 +1,14 @@
 package main
 
 import (
-	"fmt"
+	"encoding/json"
 	"github.com/elgs/gostrgen"
-	"github.com/go-siris/siris"
-	"github.com/go-siris/siris/context"
 	"github.com/joho/godotenv"
+	"github.com/julienschmidt/httprouter"
 	"github.com/sirupsen/logrus"
-	"gopkg.in/h2non/filetype.v1"
 	"io"
 	"io/ioutil"
+	"net/http"
 	"os"
 )
 
@@ -24,84 +23,97 @@ type SimpleResponse struct {
 	Message string
 }
 
-func main() {
-	app := siris.New()
+var peopleServed = 0
+var successfulServed = 0
+var unsuccessfulServed = 0
 
+type StatsResponse struct {
+	PeopleServed             int
+	SuccessfulPeopleServed   int
+	UnsuccessfulPeopleServed int
+}
+
+func upload(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	logrus.Info("Handling upload request")
+	if r.Method == "POST" {
+		r.ParseMultipartForm(10000000)
+		key := r.Form.Get("key")
+
+		if key != os.Getenv("UPLOAD_KEY") {
+			json.NewEncoder(w).Encode(SimpleResponse{Success: false, Message: "Invalid upload key"})
+			return
+		}
+
+		file, _, err := r.FormFile("img")
+
+		if err != nil {
+			json.NewEncoder(w).Encode(SimpleResponse{Success: false, Message: "Could not upload: " + err.Error()})
+			return
+		}
+
+		defer file.Close()
+
+		randName := randString(6)
+
+		f, err := os.OpenFile("./files/"+randName+".png", os.O_WRONLY|os.O_CREATE, 0666)
+		if err != nil {
+			json.NewEncoder(w).Encode(SimpleResponse{Success: false, Message: "Could not open new file"})
+			return
+		}
+		defer f.Close()
+		io.Copy(f, file)
+
+		json.NewEncoder(w).Encode(Response{Success: true, Message: "File uploaded", Name: randName})
+
+	} else {
+		json.NewEncoder(w).Encode(SimpleResponse{Success: false, Message: "Invalid method"})
+	}
+
+}
+
+func serveImage(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	imgName := ps.ByName("imgname")
+
+	if imgName == "stats" {
+		// lol thanks httprouter
+		stats(w, r, ps)
+		return
+	}
+
+	filePath := "./files/" + imgName + ".png"
+	_, err := ioutil.ReadFile(filePath)
+	if err != nil {
+		json.NewEncoder(w).Encode(SimpleResponse{Success: false, Message: "Unknown file"})
+		return
+	}
+
+	logrus.Info("serving " + imgName)
+
+	http.ServeFile(w, r, filePath)
+}
+
+func stats(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	json.NewEncoder(w).Encode(StatsResponse{PeopleServed: peopleServed, SuccessfulPeopleServed: successfulServed, UnsuccessfulPeopleServed: unsuccessfulServed})
+}
+
+func main() {
 	err := godotenv.Load()
 	if err != nil {
 		panic("Cannot load .env file, please make sure it is created.")
 	}
 
-	app.Post("/upload", func(ctx context.Context) {
-		logrus.Info("Handling upload request")
-		key := ctx.PostValue("key")
-		if key != os.Getenv("UPLOAD_KEY") {
-			logrus.Error("Invalid application key provided")
-			ctx.StatusCode(siris.StatusInternalServerError)
-			ctx.JSON(SimpleResponse{Success: false, Message: "Invalid application key"})
-			return
-		}
+	logrus.Info("starting...")
 
-		file, _, err := ctx.FormFile("img")
-		if err != nil {
-			logrus.Error("No file was given")
-			ctx.StatusCode(siris.StatusInternalServerError)
-			ctx.JSON(SimpleResponse{Success: false, Message: "Could not upload [no file]"})
-			return
-		}
+	r := httprouter.New()
 
-		defer file.Close()
-		randName := randString(6)
+	r.POST("/upload", upload)
+	r.GET("/:imgname", serveImage)
 
-		out, err := os.OpenFile("./files/"+randName+".png", os.O_WRONLY|os.O_CREATE, 0666)
-		if err != nil {
-			logrus.Error("Could not write the file")
-			fmt.Println("Could't write the file, please make sure the 'files' directory is created.")
-			ctx.StatusCode(siris.StatusInternalServerError)
-			ctx.JSON(SimpleResponse{Success: false, Message: "Could not upload [cf]"})
-			return
-		}
-		defer out.Close()
-		io.Copy(out, file)
-		buf, _ := ioutil.ReadFile("./files/" + randName + ".png")
+	if err := http.ListenAndServe(os.Getenv("BIND_HOST")+":"+os.Getenv("BIND_PORT"), r); err != nil {
+		logrus.Error(err.Error())
+		os.Exit(1)
+	}
 
-		if filetype.IsImage(buf) {
-			logrus.Info("Uploaded file and served response: " + randName)
-			ctx.StatusCode(siris.StatusOK)
-			ctx.JSON(Response{Success: true, Message: "Uploaded", Name: randName})
-		} else {
-			logrus.Error("Uploaded file was not an image")
-			ctx.StatusCode(siris.StatusInternalServerError)
-			ctx.JSON(SimpleResponse{Success: false, Message: "Uploaded file is not an image"})
-			// Need a workaround, os.Remove reports process is already using the file.
-			os.Remove("./files/" + randName)
-		}
-	})
-
-	app.Get("/{imgName}", func(ctx context.Context) {
-		imgName := ctx.Params().Get("imgName")
-		filePath := "./files/" + imgName + ".png"
-		_, err := ioutil.ReadFile(filePath)
-		if err != nil {
-			logrus.Error("Serving file '" + imgName + "' - unknown file")
-			ctx.StatusCode(siris.StatusInternalServerError)
-			ctx.JSON(SimpleResponse{Success: false, Message: " Unknown file"})
-			return
-		}
-
-		logrus.Info("Serving file '" + imgName + "' - success")
-		ctx.StatusCode(siris.StatusOK)
-		ctx.ServeFile(filePath, true)
-
-	})
-
-	app.Get("/", func(ctx context.Context) {
-		logrus.Info("Serving index page")
-		ctx.StatusCode(siris.StatusOK)
-		ctx.JSON(SimpleResponse{Success: true, Message: os.Getenv("INDEX_PAGE_TEXT")})
-	})
-
-	app.Run(siris.Addr(os.Getenv("BIND_HOST") + ":" + os.Getenv("BIND_PORT")))
 }
 
 func randString(n int) string {
