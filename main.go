@@ -79,15 +79,18 @@ func serveImage(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		stats(w, r, ps)
 		return
 	}
+	peopleServed += 1
 
 	filePath := "./files/" + imgName + ".png"
 	_, err := ioutil.ReadFile(filePath)
 	if err != nil {
+		unsuccessfulServed += 1
 		json.NewEncoder(w).Encode(SimpleResponse{Success: false, Message: "Unknown file"})
 		return
 	}
 
 	logrus.Info("serving " + imgName)
+	successfulServed += 1
 
 	http.ServeFile(w, r, filePath)
 }
