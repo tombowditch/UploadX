@@ -102,7 +102,7 @@ func stats(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 func main() {
 	err := godotenv.Load()
 	if err != nil {
-		panic("Cannot load .env file, please make sure it is created.")
+		panic("Cannot load .env file, please make sure it is created. See: https://github.com/tombowditch/UploadX/blob/master/.env.example")
 	}
 
 	logrus.Info("starting...")
