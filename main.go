@@ -2,14 +2,15 @@ package main
 
 import (
 	"encoding/json"
-	"github.com/elgs/gostrgen"
-	"github.com/joho/godotenv"
-	"github.com/julienschmidt/httprouter"
-	"github.com/sirupsen/logrus"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
+
+	"github.com/elgs/gostrgen"
+	"github.com/joho/godotenv"
+	"github.com/julienschmidt/httprouter"
+	"github.com/sirupsen/logrus"
 )
 
 type Response struct {
@@ -55,7 +56,7 @@ func upload(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 
 		randName := randString(6)
 
-		f, err := os.OpenFile("./files/"+randName+".png", os.O_WRONLY|os.O_CREATE, 0666)
+		f, err := os.OpenFile(os.Getenv("UPLOAD_LOCATION")+"/"+randName+".png", os.O_WRONLY|os.O_CREATE, 0666)
 		if err != nil {
 			json.NewEncoder(w).Encode(SimpleResponse{Success: false, Message: "Could not open new file"})
 			return
@@ -81,7 +82,7 @@ func serveImage(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	}
 	peopleServed += 1
 
-	filePath := "./files/" + imgName + ".png"
+	filePath := os.Getenv("UPLOAD_LOCATION") + "/" + imgName + ".png"
 	_, err := ioutil.ReadFile(filePath)
 	if err != nil {
 		unsuccessfulServed += 1
