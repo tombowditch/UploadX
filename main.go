@@ -111,7 +111,10 @@ func main() {
 
 	logrus.Info("starting...")
 
-	_ = os.Mkdir(os.Getenv("UPLOAD_LOCATION"), os.ModeDir)
+	err = os.Mkdir(os.Getenv("UPLOAD_LOCATION"), os.ModeDir)
+	if err != nil {
+		logrus.Error("could not make directory: " + err.Error())
+	}
 
 	r := httprouter.New()
 
