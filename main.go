@@ -89,6 +89,7 @@ func serveImage(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	_, err := ioutil.ReadFile(filePath)
 	if err != nil {
 		unsuccessfulServed += 1
+		w.WriteHeader(http.StatusNotFound)
 		json.NewEncoder(w).Encode(SimpleResponse{Success: false, Message: "Unknown file"})
 		return
 	}
