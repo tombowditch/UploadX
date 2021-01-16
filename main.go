@@ -49,6 +49,7 @@ func upload(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		file, _, err := r.FormFile("img")
 
 		if err != nil {
+			logrus.Error(err.Error())
 			json.NewEncoder(w).Encode(SimpleResponse{Success: false, Message: "Could not upload: " + err.Error()})
 			return
 		}
@@ -59,6 +60,7 @@ func upload(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 
 		f, err := os.OpenFile(os.Getenv("UPLOAD_LOCATION")+"/"+randName+".png", os.O_WRONLY|os.O_CREATE, 0666)
 		if err != nil {
+			logrus.Error(err.Error())
 			json.NewEncoder(w).Encode(SimpleResponse{Success: false, Message: "Could not open new file"})
 			return
 		}
@@ -108,6 +110,8 @@ func main() {
 	}
 
 	logrus.Info("starting...")
+
+	_ = os.Mkdir(os.Getenv("UPLOAD_LOCATION"), os.ModeDir)
 
 	r := httprouter.New()
 
