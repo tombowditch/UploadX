@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -103,7 +104,7 @@ func stats(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 func main() {
 	err := godotenv.Load()
 	if err != nil {
-		panic("Cannot load .env file, please make sure it is created.")
+		fmt.Println("Cannot load .env file, please make sure it is created.")
 	}
 
 	logrus.Info("starting...")
