@@ -3,9 +3,9 @@ Using UploadX on macOS
 
 > Remember: ShareX isn't available on macOS, and it doesn't plan to be. I use Greenshot, but any screenshot program that has the utility to save to a directory will work.
 
-A number of scripts are involved, but once it works it works pretty nicely. I utilize the `fswatch` (`brew install fswatch`) to watch the Greenshot pictures directory (`~/Pictures/Greenshot`) for updates and then pipe them off to a script.
+A number of scripts are involved, but once it works, it works pretty nicely. I utilize the `fswatch` (`brew install fswatch`) to watch the Greenshot pictures directory (`~/Pictures/Greenshot`) for updates and then pipe them off to a script.
 
-The script it pipes them off to:
+The script (I named it `auto-screenshot-uploader.sh`) it pipes them off to:
 
 ```bash
 #!/bin/bash
@@ -33,7 +33,7 @@ fi
 
 ```
 
-I then have a script which I run in the background on boot which just contains the fswatch command -
+I then have a script which I run in the background on boot which just contains the fswatch command:
 
 ```bash
 fswatch -0 ~/Pictures/Greenshot | while read -d "" event; do bash ~/auto-screenshot-uploader.sh "$event"; done
